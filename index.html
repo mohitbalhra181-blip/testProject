@@ -1,13 +1,162 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>My Website</title>
-</head>
-<body>
-    <h1>Hello World!</h1>
-    <p>This is a paragraph.</p>
-</body>
-</html>
-<h1>mohit</h1>
-<h2>sahil</h2>
-<h3>sachin</h3>
+from pymongo import MongoClient
+
+client = MongoClient("mongodb://localhost:27017/")
+db = client["dbbank"]
+accounts_collection = db["accounts"]
+
+class BankAccount:
+    def __init__(self, acc_no, name, password, balance=0):
+        self.acc_no = acc_no
+        self.name = name
+        self.password = password
+        self.balance = balance
+        self.history = []
+
+    def deposit(self, amount):
+        self.balance += amount
+        self.history.append(f"Deposited ₹{amount}")
+        print("Deposit Successful!")
+
+    def withdraw(self, amount):
+        if amount > self.balance:
+            print("Insufficient Balance!")
+        else:
+            self.balance -= amount
+            self.history.append(f"Withdrawn ₹{amount}")
+            print("Withdrawal Successful!")
+
+    def show_balance(self):
+        print(f"Current Balance: ₹{self.balance}")
+
+    def show_history(self):
+        if not self.history:
+            print("No Transactions Found!")
+        else:
+            print("\nTransaction History:")
+            for item in self.history:
+                print(item)
+
+
+class Bank:
+    def __init__(self):
+        self.accounts = {}
+
+    def create_account(self):
+        acc_no = input("Enter Account Number: ")
+
+        if acc_no in self.accounts:
+            print("Account Already Exists!")
+            return
+
+        name = input("Enter Name: ")
+        password = input("Create Password: ")
+        balance = float(input("Initial Deposit: "))
+
+        self.accounts[acc_no] = BankAccount(
+            acc_no, name, password, balance
+        )
+
+        print("Account Created Successfully!")
+
+    def login(self):
+        acc_no = input("Account Number: ")
+        password = input("Password: ")
+
+        if acc_no in self.accounts:
+            account = self.accounts[acc_no]
+
+            if account.password == password:
+                print(f"\nWelcome {account.name}")
+                self.account_menu(account)
+            else:
+                print("Wrong Password!")
+        else:
+            print("Account Not Found!")
+
+    def transfer_money(self, sender):
+        receiver_acc = input("Receiver Account Number: ")
+
+        if receiver_acc not in self.accounts:
+            print("Receiver Account Not Found!")
+            return
+
+        amount = float(input("Enter Amount: "))
+
+        if amount > sender.balance:
+            print("Insufficient Balance!")
+            return
+
+        sender.balance -= amount
+        self.accounts[receiver_acc].balance += amount
+
+        sender.history.append(
+            f"Transferred ₹{amount} to {receiver_acc}"
+        )
+
+        self.accounts[receiver_acc].history.append(
+            f"Received ₹{amount} from {sender.acc_no}"
+        )
+
+        print("Transfer Successful!")
+
+    def account_menu(self, account):
+        while True:
+            print("\n===== ACCOUNT MENU =====")
+            print("1. Deposit")
+            print("2. Withdraw")
+            print("3. Check Balance")
+            print("4. Transfer Money")
+            print("5. Transaction History")
+            print("6. Logout")
+
+            choice = input("Enter Choice: ")
+
+            if choice == "1":
+                amount = float(input("Amount: "))
+                account.deposit(amount)
+
+            elif choice == "2":
+                amount = float(input("Amount: "))
+                account.withdraw(amount)
+
+            elif choice == "3":
+                account.show_balance()
+
+            elif choice == "4":
+                self.transfer_money(account)
+
+            elif choice == "5":
+                account.show_history()
+
+            elif choice == "6":
+                print("Logged Out!")
+                break
+
+            else:
+                print("Invalid Choice!")
+
+    def main_menu(self):
+        while True:
+            print("\n===== BANK MANAGEMENT SYSTEM =====")
+            print("1. Create Account")
+            print("2. Login")
+            print("3. Exit")
+
+            choice = input("Enter Choice: ")
+
+            if choice == "1":
+                self.create_account()
+
+            elif choice == "2":
+                self.login()
+
+            elif choice == "3":
+                print("Thank You!")
+                break
+
+            else:
+                print("Invalid Choice!")
+
+
+bank = Bank()
+bank.main_menu()
